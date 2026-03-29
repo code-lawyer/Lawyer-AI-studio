@@ -1,0 +1,11 @@
+{
+  "name": "suitagent-workspace",
+  "private": true,
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "build:web": "npm --prefix apps/web run build",
+    "lint:web": "npm --prefix apps/web run lint",
+    "dev:api": "py -3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --app-dir apps/api",
+    "test:api": "py -3 -m pytest apps/api/tests -q"
+  }
+}

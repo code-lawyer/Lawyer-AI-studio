@@ -1,0 +1,16 @@
+{
+  "id": "wf_strategy_opt",
+  "name": "策略优化",
+  "description": "诉讼过程中的策略调整和优化",
+  "category": "preset",
+  "trigger_keywords": ["客户反馈新情况", "需要调整策略", "优化证据目录"],
+  "steps": [
+    {"order": 1, "agent": "doc-analyzer", "label": "沟通记录分析"},
+    {"order": 2, "agent": "evidence-analyzer", "label": "优化证据目录"},
+    {"order": 3, "agent": "strategist", "label": "调整诉讼策略"},
+    {"order": 4, "agent": "reporter", "label": "更新方案"}
+  ],
+  "expected_outputs": ["新情况分析", "证据目录优化", "策略调整建议"],
+  "created_at": "2026-01-01T00:00:00",
+  "updated_at": "2026-03-29T00:00:00"
+}

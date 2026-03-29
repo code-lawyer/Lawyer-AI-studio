@@ -1,0 +1,16 @@
+{
+  "id": "wf_commission_docs",
+  "name": "制作委托材料",
+  "description": "正式委托时的委托文件生成",
+  "category": "preset",
+  "trigger_keywords": ["确定委托", "签署委托", "办理委托"],
+  "steps": [
+    {"order": 1, "agent": "doc-analyzer", "label": "客户信息确认"},
+    {"order": 2, "agent": "writer", "label": "生成委托文件"},
+    {"order": 3, "agent": "summarizer", "label": "委托清单摘要"},
+    {"order": 4, "agent": "reporter", "label": "整合委托材料包"}
+  ],
+  "expected_outputs": ["委托合同", "授权委托书", "谈话笔录", "委托材料清单"],
+  "created_at": "2026-01-01T00:00:00",
+  "updated_at": "2026-03-29T00:00:00"
+}

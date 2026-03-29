@@ -1,0 +1,87 @@
+<h2>SuitAgent Desktop — 整体架构</h2>
+<p class="subtitle">Tauri + Next.js + 捆绑 Python FastAPI + Claude Code CLI</p>
+
+<div class="mockup">
+  <div class="mockup-header">系统架构图</div>
+  <div class="mockup-body" style="padding:24px;font-family:monospace;font-size:13px;line-height:1.7;background:#1a1a2e;color:#e0e0e0;">
+<pre style="margin:0;white-space:pre;overflow-x:auto;">
+┌─────────────────────────────────────────────────────────┐
+│                    <span style="color:#7ecfff;font-weight:bold;">Tauri 桌面壳</span>                       │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │         <span style="color:#a5d6a7;">Next.js 前端（静态资源）</span>                │  │
+│  │                                                   │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌───────────────────┐ │  │
+│  │  │ 案件管理  │ │ 文档中心  │ │  <span style="color:#ffcc80;">工作流编辑器</span>     │ │  │
+│  │  └──────────┘ └──────────┘ └───────────────────┘ │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌───────────────────┐ │  │
+│  │  │ 任务监控  │ │ 产物审核  │ │  设置面板        │ │  │
+│  │  └──────────┘ └──────────┘ └───────────────────┘ │  │
+│  └────────────────────┬──────────────────────────────┘  │
+│                       │ HTTP (localhost)                 │
+│  ┌────────────────────▼──────────────────────────────┐  │
+│  │       <span style="color:#ce93d8;">FastAPI 后端（PyInstaller 捆绑）</span>          │  │
+│  │                                                   │  │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌────────────┐ │  │
+│  │  │  案件服务    │ │ <span style="color:#ffcc80;">工作流引擎</span>  │ │ 文档处理   │ │  │
+│  │  └─────────────┘ └─────────────┘ └────────────┘ │  │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌────────────┐ │  │
+│  │  │  SQLite索引  │ │ 文件系统    │ │ 导出引擎   │ │  │
+│  │  └─────────────┘ └──────┬──────┘ └────────────┘ │  │
+│  └─────────────────────────┼─────────────────────────┘  │
+│                            │                            │
+│  ┌─────────────────────────▼─────────────────────────┐  │
+│  │          <span style="color:#ef9a9a;">Claude Code CLI（Sidecar）</span>              │  │
+│  │                                                   │  │
+│  │  接收结构化 prompt → 调用 Agent → 返回结果        │  │
+│  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐    │  │
+│  │  │DocAnlyz│ │Writer  │ │Research│ │ ...×10 │    │  │
+│  │  └────────┘ └────────┘ └────────┘ └────────┘    │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │              <span style="color:#b0bec5;">本地文件系统</span>                      │  │
+│  │                                                   │  │
+│  │  📁 全局配置/                                     │  │
+│  │  ├── workflows/        ← 工作流模板（JSON）       │  │
+│  │  ├── settings.json     ← 用户偏好                │  │
+│  │  └── index.sqlite      ← 案件索引                │  │
+│  │                                                   │  │
+│  │  📁 案件存储目录（用户可选）/                      │  │
+│  │  ├── [2024]京01民初123号/    ← 12层标准目录       │  │
+│  │  ├── [2025]沪02民终456号/                         │  │
+│  │  └── ...                                          │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+</pre>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>核心通信链路</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px;">
+    <div style="background:#1a2332;padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
+      <div style="color:#7ecfff;font-weight:bold;margin-bottom:8px;">前端 → 后端</div>
+      <div style="color:#aaa;font-size:13px;">HTTP REST API<br/>localhost:8000<br/>与现有 API 兼容</div>
+    </div>
+    <div style="background:#1a2332;padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
+      <div style="color:#ce93d8;font-weight:bold;margin-bottom:8px;">后端 → Claude CLI</div>
+      <div style="color:#aaa;font-size:13px;">subprocess 调用<br/>JSON stdin/stdout<br/>结构化 prompt 传递</div>
+    </div>
+    <div style="background:#1a2332;padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
+      <div style="color:#a5d6a7;font-weight:bold;margin-bottom:8px;">Tauri → 进程管理</div>
+      <div style="color:#aaa;font-size:13px;">启动/停止 sidecar<br/>健康检查<br/>生命周期管理</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>关键设计决策</h3>
+  <ul style="color:#ccc;line-height:1.8;">
+    <li><strong>Next.js 静态导出</strong> — <code>next export</code> 生成纯静态 HTML/JS，Tauri WebView 直接加载，无需 Node.js 运行时</li>
+    <li><strong>FastAPI PyInstaller 捆绑</strong> — 打包为单个 .exe，作为 Tauri sidecar 管理，用户无需安装 Python</li>
+    <li><strong>案件即文件夹</strong> — SQLite 只存索引和全局配置，案件数据全部在标准 12 层目录里，可独立备份/迁移</li>
+    <li><strong>工作流模板为 JSON</strong> — 从 Markdown 规则文件抽象为结构化数据，支持编辑器读写和版本管理</li>
+    <li><strong>Claude Code CLI 按需启动</strong> — 不常驻，执行任务时启动，完成后释放资源</li>
+  </ul>
+</div>

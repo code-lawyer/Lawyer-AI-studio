@@ -1,0 +1,17 @@
+{
+  "id": "wf_post_trial",
+  "name": "庭审后分析",
+  "description": "庭审结束后的分析与策略调整",
+  "category": "preset",
+  "trigger_keywords": ["庭审结束", "分析庭审", "调整策略"],
+  "steps": [
+    {"order": 1, "agent": "doc-analyzer", "label": "庭审笔录分析"},
+    {"order": 2, "agent": "evidence-analyzer", "label": "对比前后证据"},
+    {"order": 3, "agent": "strategist", "label": "调整策略"},
+    {"order": 4, "agent": "summarizer", "label": "庭审摘要"},
+    {"order": 5, "agent": "reporter", "label": "阶段报告"}
+  ],
+  "expected_outputs": ["庭审分析", "策略调整方案", "阶段报告"],
+  "created_at": "2026-01-01T00:00:00",
+  "updated_at": "2026-03-29T00:00:00"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "wf_evidence_review",
+  "name": "新证据质证",
+  "description": "收到新证据时的质证分析流程",
+  "category": "preset",
+  "trigger_keywords": ["有新证据", "需要质证", "证据审查"],
+  "steps": [
+    {"order": 1, "agent": "doc-analyzer", "label": "分析新证据"},
+    {"order": 2, "agent": "evidence-analyzer", "label": "证据质证"},
+    {"order": 3, "agent": "researcher", "label": "针对性法条研究"},
+    {"order": 4, "agent": "writer", "label": "质证意见书"},
+    {"order": 5, "agent": "summarizer", "label": "证据摘要"}
+  ],
+  "expected_outputs": ["证据分析报告", "质证意见书", "证据摘要"],
+  "created_at": "2026-01-01T00:00:00",
+  "updated_at": "2026-03-29T00:00:00"
+}

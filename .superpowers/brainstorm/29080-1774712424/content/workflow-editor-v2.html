@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuitAgent — 工作流编辑器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --sand-50: #faf8f5;
+    --sand-100: #f3efe8;
+    --sand-200: #e8e0d4;
+    --sand-300: #d4c9b8;
+    --sand-400: #a89a86;
+    --sand-500: #7a6e5e;
+    --sand-600: #5c5245;
+    --sand-700: #3d3630;
+    --sand-800: #2a2420;
+    --ink: #1c1917;
+    --ink-light: #44403c;
+    --ink-muted: #78716c;
+    --ink-faint: #a8a29e;
+    --accent: #b45309;
+    --accent-light: #d97706;
+    --white: #fffcf8;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--sand-50);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    height: 52px;
+    background: var(--white);
+    border-bottom: 1px solid var(--sand-200);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 20px;
+  }
+  .topbar-brand {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .topbar-sep {
+    width: 1px;
+    height: 18px;
+    background: var(--sand-200);
+  }
+  .topbar-section {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-weight: 400;
+  }
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn-ghost {
+    padding: 6px 14px;
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    background: none;
+    border: 1px solid var(--sand-200);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-ghost:hover { background: var(--sand-100); color: var(--ink-light); }
+  .btn-primary {
+    padding: 6px 16px;
+    font-size: 12.5px;
+    color: var(--white);
+    background: var(--ink-light);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-primary:hover { background: var(--ink); }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 52px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    background: var(--white);
+    border-right: 1px solid var(--sand-200);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar-header {
+    padding: 20px 20px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .sidebar-group-label {
+    padding: 16px 20px 6px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-weight: 400;
+  }
+  .sidebar-item {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar-item:hover { background: var(--sand-50); }
+  .sidebar-item.active {
+    background: var(--sand-100);
+    border-left-color: var(--accent);
+  }
+  .sidebar-item-icon {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .sidebar-item-text {
+    font-size: 13.5px;
+    color: var(--ink-light);
+    line-height: 1.3;
+  }
+  .sidebar-item.active .sidebar-item-text { color: var(--ink); font-weight: 500; }
+  .sidebar-item-meta {
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--sand-200);
+  }
+  .btn-new {
+    width: 100%;
+    padding: 9px 0;
+    font-size: 13px;
+    color: var(--ink-muted);
+    background: none;
+    border: 1px dashed var(--sand-300);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-new:hover { border-color: var(--ink-faint); color: var(--ink-light); background: var(--sand-50); }
+
+  /* ── Main area ── */
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── Editor ── */
+  .editor {
+    flex: 1;
+    padding: 36px 48px;
+    overflow-y: auto;
+  }
+  .editor-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .editor-desc {
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    margin-bottom: 32px;
+  }
+  .editor-desc .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--sand-100);
+    border-radius: 4px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    margin-left: 6px;
+  }
+
+  /* ── Pipeline ── */
+  .pipeline {
+    position: relative;
+    padding-left: 28px;
+  }
+  .pipeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 18px;
+    bottom: 54px;
+    width: 1px;
+    background: var(--sand-200);
+  }
+  .step {
+    position: relative;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .step-dot {
+    position: absolute;
+    left: -24px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 1.5px solid var(--sand-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+  }
+  .step-dot-inner {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--sand-400);
+  }
+  .step-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--white);
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.15s;
+  }
+  .step-card:hover {
+    border-color: var(--sand-300);
+    box-shadow: 0 2px 8px rgba(28, 25, 23, 0.04);
+  }
+  .step-grip {
+    color: var(--sand-300);
+    font-size: 11px;
+    cursor: grab;
+    user-select: none;
+    line-height: 1;
+  }
+  .step-order {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-faint);
+    min-width: 16px;
+  }
+  .step-agent {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .step-label {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    margin-left: 4px;
+  }
+  .step-label::before {
+    content: '·';
+    margin-right: 6px;
+    color: var(--sand-300);
+  }
+  .step-remove {
+    margin-left: auto;
+    color: var(--sand-300);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .step-remove:hover { color: var(--ink-faint); background: var(--sand-100); }
+
+  .step-add {
+    position: relative;
+    margin-top: 2px;
+  }
+  .step-add-btn {
+    flex: 1;
+    padding: 12px 18px;
+    background: none;
+    border: 1px dashed var(--sand-200);
+    border-radius: 8px;
+    color: var(--ink-faint);
+    font-size: 12.5px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: center;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .step-add-btn:hover { border-color: var(--sand-400); color: var(--ink-muted); }
+
+  /* ── Agent palette ── */
+  .palette {
+    width: 200px;
+    background: var(--white);
+    border-left: 1px solid var(--sand-200);
+    padding: 20px 16px;
+    overflow-y: auto;
+  }
+  .palette-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+  .palette-group {
+    margin-bottom: 16px;
+  }
+  .palette-group-label {
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+    padding-left: 2px;
+  }
+  .palette-agent {
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    cursor: grab;
+    transition: background 0.1s;
+    margin-bottom: 2px;
+  }
+  .palette-agent:hover { background: var(--sand-100); }
+  .palette-agent-icon { font-size: 14px; width: 18px; text-align: center; }
+  .palette-agent-name {
+    font-size: 12.5px;
+    color: var(--ink-light);
+  }
+
+  /* ── Keywords section ── */
+  .keywords {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--sand-100);
+  }
+  .keywords-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+  }
+  .keywords-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .keyword {
+    padding: 4px 10px;
+    background: var(--sand-100);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .keyword-add {
+    padding: 4px 10px;
+    background: none;
+    border: 1px dashed var(--sand-200);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-brand">SuitAgent</div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-section">工作流编辑器</div>
+  <div class="topbar-actions">
+    <button class="btn-ghost">复制为自定义</button>
+    <button class="btn-primary">保存</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar: workflow list -->
+  <div class="sidebar">
+    <div class="sidebar-header">工作流模板</div>
+
+    <div class="sidebar-group-label">系统预设</div>
+    <div class="sidebar-item active">
+      <span class="sidebar-item-text">被告应诉</span>
+      <span class="sidebar-item-meta">8步</span>
+    </div>
+    <div class="sidebar-item">
+      <span class="sidebar-item-text">新证据质证</span>
+      <span class="sidebar-item-meta">5步</span>
+    </div>
+    <div class="sidebar-item">
+      <span class="sidebar-item-text">庭审后分析</span>
+      <span class="sidebar-item-meta">5步</span>
+    </div>
+    <div class="sidebar-item">
+      <span class="sidebar-item-text">原告起诉</span>
+      <span class="sidebar-item-meta">8步</span>
+    </div>
+    <div class="sidebar-item">
+      <span class="sidebar-item-text">法律服务方案</span>
+      <span class="sidebar-item-meta">5步</span>
+    </div>
+    <div class="sidebar-item">
+      <span class="sidebar-item-text">策略优化</span>
+      <span class="sidebar-item-meta">4步</span>
+    </div>
+    <div class="sidebar-item">
+      <span class="sidebar-item-text">制作委托材料</span>
+      <span class="sidebar-item-meta">4步</span>
+    </div>
+
+    <div class="sidebar-group-label">我的工作流</div>
+    <div class="sidebar-item">
+      <span class="sidebar-item-text">知产侵权应诉</span>
+      <span class="sidebar-item-meta">6步</span>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="btn-new">+ 新建工作流</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Editor: pipeline view -->
+    <div class="editor">
+      <div class="editor-title">被告应诉</div>
+      <div class="editor-desc">
+        收到起诉状时的完整应诉流程
+        <span class="tag">系统预设</span>
+      </div>
+
+      <div class="pipeline">
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">1</span>
+            <span class="step-agent">DocAnalyzer</span>
+            <span class="step-label">分析起诉状</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">2</span>
+            <span class="step-agent">IssueIdentifier</span>
+            <span class="step-label">识别争议焦点</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">3</span>
+            <span class="step-agent">Researcher</span>
+            <span class="step-label">法律检索</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">4</span>
+            <span class="step-agent">Strategist</span>
+            <span class="step-label">制定应诉策略</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">5</span>
+            <span class="step-agent">Writer</span>
+            <span class="step-label">起草答辩状</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">6</span>
+            <span class="step-agent">Reviewer</span>
+            <span class="step-label">质量审查</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">7</span>
+            <span class="step-agent">Summarizer</span>
+            <span class="step-label">生成摘要</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-dot"><div class="step-dot-inner"></div></div>
+          <div class="step-card">
+            <span class="step-grip">⠿</span>
+            <span class="step-order">8</span>
+            <span class="step-agent">Reporter</span>
+            <span class="step-label">整合报告</span>
+            <span class="step-remove">×</span>
+          </div>
+        </div>
+
+        <div class="step step-add">
+          <div class="step-dot" style="border-style:dashed;"><div class="step-dot-inner" style="background:var(--sand-300);"></div></div>
+          <button class="step-add-btn">从右侧拖入 Agent 添加步骤</button>
+        </div>
+      </div>
+
+      <!-- Trigger keywords -->
+      <div class="keywords">
+        <div class="keywords-label">触发关键词</div>
+        <div class="keywords-list">
+          <span class="keyword">收到起诉状</span>
+          <span class="keyword">需要应诉</span>
+          <span class="keyword">准备答辩</span>
+          <button class="keyword-add">+ 添加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: agent palette -->
+    <div class="palette">
+      <div class="palette-title">可用 Agent</div>
+
+      <div class="palette-group">
+        <div class="palette-group-label">输入层</div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">📄</span>
+          <span class="palette-agent-name">DocAnalyzer</span>
+        </div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">📎</span>
+          <span class="palette-agent-name">EvidenceAnalyzer</span>
+        </div>
+      </div>
+
+      <div class="palette-group">
+        <div class="palette-group-label">分析层</div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">🎯</span>
+          <span class="palette-agent-name">IssueIdentifier</span>
+        </div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">🔍</span>
+          <span class="palette-agent-name">Researcher</span>
+        </div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">🧠</span>
+          <span class="palette-agent-name">Strategist</span>
+        </div>
+      </div>
+
+      <div class="palette-group">
+        <div class="palette-group-label">输出层</div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">✍️</span>
+          <span class="palette-agent-name">Writer</span>
+        </div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">📊</span>
+          <span class="palette-agent-name">Reporter</span>
+        </div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">📋</span>
+          <span class="palette-agent-name">Summarizer</span>
+        </div>
+      </div>
+
+      <div class="palette-group">
+        <div class="palette-group-label">支持层</div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">🕐</span>
+          <span class="palette-agent-name">Scheduler</span>
+        </div>
+        <div class="palette-agent">
+          <span class="palette-agent-icon">🔎</span>
+          <span class="palette-agent-name">Reviewer</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

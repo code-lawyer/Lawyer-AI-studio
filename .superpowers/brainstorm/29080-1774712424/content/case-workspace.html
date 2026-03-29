@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuitAgent — 案件工作台</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --sand-50: #faf8f5;
+    --sand-100: #f3efe8;
+    --sand-200: #e8e0d4;
+    --sand-300: #d4c9b8;
+    --sand-400: #a89a86;
+    --sand-500: #7a6e5e;
+    --sand-600: #5c5245;
+    --sand-700: #3d3630;
+    --sand-800: #2a2420;
+    --ink: #1c1917;
+    --ink-light: #44403c;
+    --ink-muted: #78716c;
+    --ink-faint: #a8a29e;
+    --accent: #b45309;
+    --green: #3d7a4a;
+    --green-bg: #f0f7f1;
+    --red: #9a3412;
+    --red-bg: #fef2f2;
+    --blue: #1e5c8a;
+    --blue-bg: #eff6ff;
+    --white: #fffcf8;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--sand-50);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    height: 52px;
+    background: var(--white);
+    border-bottom: 1px solid var(--sand-200);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 20px;
+  }
+  .topbar-brand {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .topbar-sep { width: 1px; height: 18px; background: var(--sand-200); }
+  .topbar-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .topbar-nav-item {
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .topbar-nav-item:hover { background: var(--sand-100); color: var(--ink-light); }
+  .topbar-nav-item.active { background: var(--sand-100); color: var(--ink); font-weight: 500; }
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .topbar-status {
+    font-size: 12px;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .topbar-status-dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+  }
+  .btn-ghost {
+    padding: 6px 14px;
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    background: none;
+    border: 1px solid var(--sand-200);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-ghost:hover { background: var(--sand-100); color: var(--ink-light); }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 52px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    background: var(--white);
+    border-right: 1px solid var(--sand-200);
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-case-info {
+    padding: 20px;
+    border-bottom: 1px solid var(--sand-100);
+  }
+  .sidebar-case-code {
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+  }
+  .sidebar-case-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .sidebar-case-meta {
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.6;
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 12px 0;
+    overflow-y: auto;
+  }
+  .sidebar-nav-item {
+    padding: 9px 20px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-nav-item:hover { background: var(--sand-50); color: var(--ink-light); }
+  .sidebar-nav-item.active {
+    background: var(--sand-100);
+    color: var(--ink);
+    font-weight: 500;
+    border-left-color: var(--accent);
+  }
+  .sidebar-nav-badge {
+    font-size: 11px;
+    color: var(--ink-faint);
+    background: var(--sand-100);
+    padding: 1px 7px;
+    border-radius: 10px;
+  }
+
+  .sidebar-stats {
+    padding: 16px 20px;
+    border-top: 1px solid var(--sand-200);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-item {
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+  .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+  }
+
+  /* ── Main content ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Content header ── */
+  .content-header {
+    padding: 20px 32px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--sand-100);
+    background: var(--white);
+  }
+  .content-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .content-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-sm {
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--ink-muted);
+    background: none;
+    border: 1px solid var(--sand-200);
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .btn-sm:hover { background: var(--sand-50); }
+  .btn-sm-primary {
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--white);
+    background: var(--ink-light);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.12s;
+  }
+
+  /* ── Split pane ── */
+  .split {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── Document list (left) ── */
+  .doc-list {
+    width: 320px;
+    border-right: 1px solid var(--sand-100);
+    overflow-y: auto;
+    background: var(--white);
+  }
+  .doc-item {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--sand-50);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .doc-item:hover { background: var(--sand-50); }
+  .doc-item.active { background: var(--sand-100); }
+  .doc-item-name {
+    font-size: 13.5px;
+    color: var(--ink);
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+  .doc-item-info {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    display: flex;
+    gap: 10px;
+  }
+  .doc-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: 500;
+  }
+  .doc-tag-evidence { background: var(--blue-bg); color: var(--blue); }
+  .doc-tag-court { background: var(--green-bg); color: var(--green); }
+  .doc-tag-opposing { background: var(--red-bg); color: var(--red); }
+
+  /* ── Preview (right) ── */
+  .preview {
+    flex: 1;
+    padding: 24px 32px;
+    overflow-y: auto;
+  }
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .preview-filename {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .preview-meta {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .preview-body {
+    font-size: 13.5px;
+    color: var(--ink-light);
+    line-height: 1.8;
+    white-space: pre-wrap;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .preview-body h3 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15px;
+    color: var(--ink);
+    margin: 20px 0 8px;
+    font-weight: 600;
+  }
+  .preview-body p {
+    margin-bottom: 8px;
+  }
+
+  /* ── Task panel (bottom right float) ── */
+  .task-panel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 360px;
+    background: var(--white);
+    border: 1px solid var(--sand-200);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(28,25,23,0.08);
+    overflow: hidden;
+  }
+  .task-panel-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--sand-100);
+  }
+  .task-panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .task-panel-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .badge-running { background: var(--blue-bg); color: var(--blue); }
+  .badge-completed { background: var(--green-bg); color: var(--green); }
+  .task-panel-body {
+    padding: 14px 18px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .task-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .task-entry:last-child { margin-bottom: 0; }
+  .task-check {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--sand-300);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .task-check.done {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .task-check.done::after {
+    content: '✓';
+    color: white;
+    font-size: 10px;
+  }
+  .task-check.active {
+    border-color: var(--blue);
+    background: var(--blue-bg);
+  }
+  .task-check.active::after {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--blue);
+    border-radius: 50%;
+  }
+  .task-info {
+    flex: 1;
+  }
+  .task-name {
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .task-name.muted { color: var(--ink-faint); font-weight: 400; }
+  .task-agent {
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 1px;
+  }
+  .task-panel-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--sand-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .task-progress-text {
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .task-progress-bar {
+    width: 120px;
+    height: 3px;
+    background: var(--sand-100);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .task-progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-brand">SuitAgent</div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-nav">
+    <div class="topbar-nav-item">案件列表</div>
+    <div class="topbar-nav-item active">工作台</div>
+    <div class="topbar-nav-item">工作流</div>
+    <div class="topbar-nav-item">设置</div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-status">
+      <div class="topbar-status-dot"></div>
+      Claude Code 已连接
+    </div>
+    <button class="btn-ghost">导出</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar: case info + navigation -->
+  <div class="sidebar">
+    <div class="sidebar-case-info">
+      <div class="sidebar-case-code">[2025]京0105民初1234号</div>
+      <div class="sidebar-case-title">甲公司诉乙公司著作权侵权纠纷</div>
+      <div class="sidebar-case-meta">
+        承办人：张律师<br>
+        阶段：审理中
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="sidebar-nav-item active">
+        文档中心
+        <span class="sidebar-nav-badge">12</span>
+      </div>
+      <div class="sidebar-nav-item">
+        证据材料
+        <span class="sidebar-nav-badge">8</span>
+      </div>
+      <div class="sidebar-nav-item">
+        法律研究
+        <span class="sidebar-nav-badge">3</span>
+      </div>
+      <div class="sidebar-nav-item">
+        法律文书
+        <span class="sidebar-nav-badge">2</span>
+      </div>
+      <div class="sidebar-nav-item">
+        综合报告
+        <span class="sidebar-nav-badge">1</span>
+      </div>
+      <div class="sidebar-nav-item">
+        任务历史
+      </div>
+      <div class="sidebar-nav-item">
+        时间线
+      </div>
+    </div>
+
+    <div class="sidebar-stats">
+      <div class="stat-item">
+        <div class="stat-value">12</div>
+        文档
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">5</div>
+        产物
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">3</div>
+        待审核
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">28</div>
+        天 · 下次开庭
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="content-header">
+      <div class="content-title">文档中心</div>
+      <div class="content-actions">
+        <button class="btn-sm">筛选</button>
+        <button class="btn-sm-primary">上传文档</button>
+      </div>
+    </div>
+
+    <div class="split">
+      <!-- Document list -->
+      <div class="doc-list">
+        <div class="doc-item active">
+          <div class="doc-item-name">民事起诉状</div>
+          <div class="doc-item-info">
+            <span>PDF · 2025-10-15</span>
+            <span class="doc-tag doc-tag-opposing">对方提交</span>
+          </div>
+        </div>
+        <div class="doc-item">
+          <div class="doc-item-name">著作权登记证书</div>
+          <div class="doc-item-info">
+            <span>PDF · 2025-10-18</span>
+            <span class="doc-tag doc-tag-evidence">证据材料</span>
+          </div>
+        </div>
+        <div class="doc-item">
+          <div class="doc-item-name">侵权对比鉴定报告</div>
+          <div class="doc-item-info">
+            <span>PDF · 2025-11-02</span>
+            <span class="doc-tag doc-tag-evidence">证据材料</span>
+          </div>
+        </div>
+        <div class="doc-item">
+          <div class="doc-item-name">开庭传票</div>
+          <div class="doc-item-info">
+            <span>PDF · 2025-11-10</span>
+            <span class="doc-tag doc-tag-court">法院送达</span>
+          </div>
+        </div>
+        <div class="doc-item">
+          <div class="doc-item-name">被告答辩状</div>
+          <div class="doc-item-info">
+            <span>DOCX · 2025-11-20</span>
+            <span class="doc-tag doc-tag-opposing">对方提交</span>
+          </div>
+        </div>
+        <div class="doc-item">
+          <div class="doc-item-name">软件源代码对比分析</div>
+          <div class="doc-item-info">
+            <span>PDF · 2025-12-01</span>
+            <span class="doc-tag doc-tag-evidence">证据材料</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document preview -->
+      <div class="preview">
+        <div class="preview-header">
+          <div>
+            <div class="preview-filename">民事起诉状</div>
+            <div class="preview-meta">PDF · 3页 · 上传于 2025-10-15</div>
+          </div>
+          <div class="content-actions">
+            <button class="btn-sm">原文件</button>
+            <button class="btn-sm">选入任务</button>
+          </div>
+        </div>
+        <div class="preview-body">
+          <h3>原告基本信息</h3>
+          <p>原告：甲公司，住所地北京市海淀区中关村南大街XX号</p>
+          <p>法定代表人：王某某，职务：总经理</p>
+
+          <h3>被告基本信息</h3>
+          <p>被告：乙公司，住所地北京市朝阳区建国路XX号</p>
+          <p>法定代表人：李某某，职务：总经理</p>
+
+          <h3>诉讼请求</h3>
+          <p>1. 判令被告立即停止侵害原告著作权的行为；</p>
+          <p>2. 判令被告赔偿原告经济损失及合理开支共计人民币500,000元；</p>
+          <p>3. 判令被告承担本案全部诉讼费用。</p>
+
+          <h3>事实与理由</h3>
+          <p>原告系涉案软件的著作权人，于2023年6月完成开发并于2023年9月取得计算机软件著作权登记证书。被告未经原告许可，在其产品中大量使用了与原告软件实质性相似的代码……</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Floating task panel -->
+<div class="task-panel">
+  <div class="task-panel-header">
+    <div class="task-panel-title">被告应诉 · 工作流</div>
+    <span class="task-panel-badge badge-running">执行中</span>
+  </div>
+  <div class="task-panel-body">
+    <div class="task-entry">
+      <div class="task-check done"></div>
+      <div class="task-info">
+        <div class="task-name">分析起诉状</div>
+        <div class="task-agent">DocAnalyzer · 已完成</div>
+      </div>
+    </div>
+    <div class="task-entry">
+      <div class="task-check done"></div>
+      <div class="task-info">
+        <div class="task-name">识别争议焦点</div>
+        <div class="task-agent">IssueIdentifier · 已完成</div>
+      </div>
+    </div>
+    <div class="task-entry">
+      <div class="task-check active"></div>
+      <div class="task-info">
+        <div class="task-name">法律检索</div>
+        <div class="task-agent">Researcher · 执行中…</div>
+      </div>
+    </div>
+    <div class="task-entry">
+      <div class="task-check"></div>
+      <div class="task-info">
+        <div class="task-name muted">制定应诉策略</div>
+        <div class="task-agent">Strategist</div>
+      </div>
+    </div>
+    <div class="task-entry">
+      <div class="task-check"></div>
+      <div class="task-info">
+        <div class="task-name muted">起草答辩状</div>
+        <div class="task-agent">Writer</div>
+      </div>
+    </div>
+  </div>
+  <div class="task-panel-footer">
+    <div class="task-progress-text">2 / 8 已完成</div>
+    <div class="task-progress-bar">
+      <div class="task-progress-fill" style="width:25%"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

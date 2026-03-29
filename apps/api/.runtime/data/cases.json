@@ -1,0 +1,15 @@
+[
+  {
+    "case_code": "LAN-2026-01",
+    "title": "张三诉李四借贷纠纷案",
+    "case_type": "民事一审",
+    "case_cause": "",
+    "owner_name": "兰州大",
+    "id": "case_432afdd6d0",
+    "status": "active",
+    "phase": "建档中",
+    "workspace_initialized": true,
+    "created_at": "2026-03-23T12:06:09.245105+00:00",
+    "updated_at": "2026-03-23T12:06:09.245120+00:00"
+  }
+]

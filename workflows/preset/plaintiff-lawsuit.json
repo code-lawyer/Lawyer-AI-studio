@@ -1,0 +1,20 @@
+{
+  "id": "wf_plaintiff_lawsuit",
+  "name": "原告起诉",
+  "description": "完整起诉流程，从材料分析到起诉包生成",
+  "category": "preset",
+  "trigger_keywords": ["准备起诉", "委托起诉", "需要起诉状"],
+  "steps": [
+    {"order": 1, "agent": "doc-analyzer", "label": "案件材料分析"},
+    {"order": 2, "agent": "issue-identifier", "label": "识别争议焦点"},
+    {"order": 3, "agent": "researcher", "label": "法律检索"},
+    {"order": 4, "agent": "evidence-analyzer", "label": "证据分析"},
+    {"order": 5, "agent": "writer", "label": "起草起诉状"},
+    {"order": 6, "agent": "writer", "label": "制作证据目录"},
+    {"order": 7, "agent": "summarizer", "label": "案件摘要"},
+    {"order": 8, "agent": "reporter", "label": "整合起诉包"}
+  ],
+  "expected_outputs": ["争议焦点分析", "法律检索报告", "起诉状草稿", "证据目录"],
+  "created_at": "2026-01-01T00:00:00",
+  "updated_at": "2026-03-29T00:00:00"
+}
