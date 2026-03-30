@@ -36,7 +36,7 @@ fn wait_for_backend(timeout_secs: u64) -> bool {
     let deadline = std::time::Instant::now() + Duration::from_secs(timeout_secs);
 
     while std::time::Instant::now() < deadline {
-        if client.get("http://127.0.0.1:8000/api/cases").send().is_ok() {
+        if client.get("http://127.0.0.1:8000/api/health").send().is_ok() {
             return true;
         }
         std::thread::sleep(Duration::from_millis(300));

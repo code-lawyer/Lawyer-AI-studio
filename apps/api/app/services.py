@@ -341,19 +341,31 @@ class WorkspaceService:
         if not workflow_run_record:
             return
         workflow_run = WorkflowRunRecord(**workflow_run_record)
-        status = "running"
-        completed_at = ""
-        if task.status == "completed":
+        all_tasks = [
+            TaskRecord(**t)
+            for t in self.store.filter_by("tasks", workflow_run_id=workflow_run.id)
+        ]
+        statuses = {t.status for t in all_tasks}
+        if statuses == {"completed"}:
             status = "completed"
             completed_at = utc_now()
-        elif task.status == "failed":
+        elif "failed" in statuses:
             status = "failed"
-        elif task.status == "canceled":
+            completed_at = ""
+        elif "canceled" in statuses and "running" not in statuses and "pending" not in statuses:
             status = "canceled"
+            completed_at = ""
+        elif "running" in statuses or "pending" in statuses:
+            status = "running"
+            completed_at = ""
+        else:
+            status = workflow_run.status
+            completed_at = ""
+        error_messages = [t.error_message for t in all_tasks if t.error_message]
         workflow_run = workflow_run.model_copy(
             update={
                 "status": status,
-                "error_message": task.error_message,
+                "error_message": "; ".join(error_messages) if error_messages else "",
                 "updated_at": utc_now(),
                 "completed_at": completed_at,
             }

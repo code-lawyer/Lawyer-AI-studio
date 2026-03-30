@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from .models import ArtifactExportPayload, ArtifactReviewPayload, CaseCreate, TaskCreate
+from .models import ArtifactExportPayload, ArtifactReviewPayload, CaseCreate, TaskCreate, WorkflowExecuteRequest
 from .services import WorkspaceService
 from .store import JsonStore
 from .workflow_routes import create_workflow_router
@@ -108,12 +108,12 @@ def create_app(
         return task.model_dump()
 
     @app.post("/api/cases/{case_id}/execute-workflow", status_code=201)
-    def execute_workflow(case_id: str, payload: dict) -> dict:
+    def execute_workflow(case_id: str, payload: WorkflowExecuteRequest) -> dict:
         try:
             result = service.execute_workflow(
                 case_id,
-                payload["workflow_id"],
-                payload.get("document_ids", []),
+                payload.workflow_id,
+                payload.document_ids,
                 engine,
             )
         except KeyError as exc:

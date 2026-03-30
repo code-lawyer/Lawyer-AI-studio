@@ -11,8 +11,10 @@ class WorkflowEngine:
     def __init__(self, preset_dir: Path, custom_dir: Path):
         self.preset_dir = preset_dir
         self.custom_dir = custom_dir
+        self._preset_cache: list[WorkflowTemplate] = self._load_dir(preset_dir)
 
-    def _load_dir(self, directory: Path) -> list[WorkflowTemplate]:
+    @staticmethod
+    def _load_dir(directory: Path) -> list[WorkflowTemplate]:
         results: list[WorkflowTemplate] = []
         if not directory.exists():
             return results
@@ -22,19 +24,23 @@ class WorkflowEngine:
         return results
 
     def list_workflows(self) -> list[WorkflowTemplate]:
-        return self._load_dir(self.preset_dir) + self._load_dir(self.custom_dir)
+        return list(self._preset_cache) + self._load_dir(self.custom_dir)
 
     def get_workflow(self, workflow_id: str) -> WorkflowTemplate | None:
-        for wf in self.list_workflows():
+        for wf in self._preset_cache:
             if wf.id == workflow_id:
                 return wf
+        path = self.custom_dir / f"{workflow_id}.json"
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return WorkflowTemplate(**data)
         return None
 
     def create_workflow(
         self,
         name: str,
         description: str,
-        steps: list[dict],
+        steps: list[WorkflowStep],
         trigger_keywords: list[str] | None = None,
         expected_outputs: list[str] | None = None,
     ) -> WorkflowTemplate:
@@ -44,7 +50,7 @@ class WorkflowEngine:
             description=description,
             category="custom",
             trigger_keywords=trigger_keywords or [],
-            steps=[WorkflowStep(**s) for s in steps],
+            steps=list(steps),
             expected_outputs=expected_outputs or [],
         )
         self._save_custom(wf)
@@ -55,10 +61,6 @@ class WorkflowEngine:
         if wf is None or wf.category == "preset":
             return None
         updated = wf.model_copy(update={**updates, "updated_at": utc_now()})
-        if "steps" in updates:
-            updated = updated.model_copy(
-                update={"steps": [WorkflowStep(**s) if isinstance(s, dict) else s for s in updates["steps"]]}
-            )
         self._save_custom(updated)
         return updated
 
@@ -67,8 +69,10 @@ class WorkflowEngine:
         if wf is None or wf.category == "preset":
             return False
         path = self.custom_dir / f"{workflow_id}.json"
-        if path.exists():
+        try:
             path.unlink()
+        except FileNotFoundError:
+            pass
         return True
 
     def duplicate_workflow(self, workflow_id: str) -> WorkflowTemplate | None:
@@ -78,7 +82,7 @@ class WorkflowEngine:
         return self.create_workflow(
             name=f"{source.name} (副本)",
             description=source.description,
-            steps=[s.model_dump() for s in source.steps],
+            steps=list(source.steps),
             trigger_keywords=list(source.trigger_keywords),
             expected_outputs=list(source.expected_outputs),
         )

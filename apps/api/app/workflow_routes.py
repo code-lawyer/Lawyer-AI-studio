@@ -26,7 +26,7 @@ def create_workflow_router(engine: WorkflowEngine, store: JsonStore) -> APIRoute
         wf = engine.create_workflow(
             name=payload.name,
             description=payload.description,
-            steps=[s.model_dump() for s in payload.steps],
+            steps=payload.steps,
             trigger_keywords=payload.trigger_keywords,
             expected_outputs=payload.expected_outputs,
         )

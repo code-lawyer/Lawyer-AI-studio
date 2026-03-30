@@ -154,6 +154,11 @@ class WorkflowCreate(BaseModel):
     expected_outputs: List[str] = Field(default_factory=list)
 
 
+class WorkflowExecuteRequest(BaseModel):
+    workflow_id: str
+    document_ids: List[str] = Field(default_factory=list)
+
+
 class SettingsRecord(BaseModel):
     claude_cli_path: str = ""
     case_storage_dir: str = ""
