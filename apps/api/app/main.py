@@ -30,7 +30,7 @@ def create_app(
     store_root = data_root or (Path(__file__).resolve().parents[1] / ".runtime")
     service = WorkspaceService(JsonStore(store_root), executor_mode=executor_mode, executor_command=executor_command)
 
-    wf_dir = workflows_dir or (Path(__file__).resolve().parents[2] / "workflows")
+    wf_dir = workflows_dir or (Path(__file__).resolve().parents[3] / "workflows")
     engine = WorkflowEngine(
         preset_dir=wf_dir / "preset",
         custom_dir=wf_dir / "custom",
