@@ -1,0 +1,86 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Python (API backend) ──────────────────────────
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r apps/api/requirements.txt pyinstaller
+
+      - name: Build API executable
+        working-directory: apps/api
+        run: pyinstaller suitagent-api.spec --noconfirm
+
+      - name: Verify API executable
+        run: |
+          if (!(Test-Path "apps/api/dist/suitagent-api.exe")) {
+            Write-Error "suitagent-api.exe not found"
+            exit 1
+          }
+          Write-Output "suitagent-api.exe size: $((Get-Item apps/api/dist/suitagent-api.exe).Length / 1MB) MB"
+
+      # ── Node.js (Web frontend) ────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install frontend dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: apps/web
+        run: npm run build
+
+      # ── Rust (Tauri desktop) ──────────────────────────
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2"
+
+      - name: Build Tauri
+        working-directory: apps/desktop
+        run: cargo tauri build
+
+      # ── Upload artifacts ──────────────────────────────
+      - name: Collect installers
+        id: collect
+        shell: bash
+        run: |
+          mkdir -p release
+          cp apps/desktop/src-tauri/target/release/bundle/msi/*.msi release/
+          cp apps/desktop/src-tauri/target/release/bundle/nsis/*setup.exe release/
+          echo "msi=$(ls release/*.msi)" >> "$GITHUB_OUTPUT"
+          echo "nsis=$(ls release/*setup.exe)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          draft: false
